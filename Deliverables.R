@@ -15,7 +15,7 @@ table.cleaning.IRDs <- function(df){ # added .IRDs because other models might lo
   names.length <- fn.piper(length,names)
   # right fill the colnames
   for (i in 8:names.length(df)){
-    if(is.na(df[1,i])){
+    if(is.na(df[1,i])|df[1,i]==0){
       df[1,i] <- df[1,i-1]
     }
   }
@@ -34,10 +34,10 @@ table.cleaning.IRDs <- function(df){ # added .IRDs because other models might lo
   df <- df[!is.na(df$value),] # sometimes 2011 is NA sometimes it is zero, need to decide
   df <- TRAX_country_aggregation(df)
   # df <- df.name.change(df, "value", variable_name)
-  df <- df.name.change(df,"Metric", "Submeasure")
+  df <- df.name.change(df,"Metric", "Sub-Product")
   df <- df[,c(1:(names.length(df)-3),(names.length(df)-1),(names.length(df)-2),names.length(df))]
   toMatch <- c("Total", "total")
-  df <- df[grep(paste(toMatch,collapse="|"), df$Submeasure , invert = T),]
+  df <- df[grep(paste(toMatch,collapse="|"), df$`Sub-Product` , invert = T),]
   return(df)
 }
 
@@ -69,9 +69,9 @@ TRAX_country_aggregation <- function(df){
 IRDs_Spend <- read.xlsx("M:/Technology/DATA/Media Management/Demand side/Models/Completed/IRDs_2016.xlsx", sheet = "Value", colNames = F)
 
 IRDs_Spend_flat <- table.cleaning.IRDs(IRDs_Spend)#,"IRDs Spend")
-IRDs_Spend_flat$Measure <- "IRDs Spend"
+IRDs_Spend_flat$Product <- "IRDs Spend"
 IRDs_Spend_flat <- df.name.change(IRDs_Spend_flat, "value", "Revenues (USD $m)")
-IRDs_Spend_flat$Submeasure <- gsub(" (US$m)", "", IRDs_Spend_flat$Submeasure, fixed = T) 
+IRDs_Spend_flat$`Sub-Product` <- gsub(" (US$m)", "", IRDs_Spend_flat$`Sub-Product`, fixed = T) 
 #~~~IRDs Spend End~~~#
 
 
@@ -80,7 +80,7 @@ IRDs_Spend_flat$Submeasure <- gsub(" (US$m)", "", IRDs_Spend_flat$Submeasure, fi
 IRDs_Shipment <- read.xlsx("M:/Technology/DATA/Media Management/Demand side/Models/Completed/IRDs_2016.xlsx", sheet = "Streams Shipments", colNames = F)
 
 IRDs_Shipment_flat <- table.cleaning.IRDs(IRDs_Shipment)#,"IRDs Shipment")
-IRDs_Shipment_flat$Measure <- "Inhouse vs Outsource Shipments"
+IRDs_Shipment_flat$Product <- "IRD Inhouse vs Outsource Shipments"
 IRDs_Shipment_flat <- df.name.change(IRDs_Shipment_flat, "value", "Shipments (000s)")
 #~~~IRDs Shipments End~~~#
 
@@ -90,8 +90,8 @@ IRDs_Shipment_flat <- df.name.change(IRDs_Shipment_flat, "value", "Shipments (00
 IRDs_Contri_Shipment <- read.xlsx("M:/Technology/DATA/Media Management/Demand side/Models/Completed/IRDs_2016.xlsx", sheet = "Contribution shipments", colNames = F)
 
 IRDs_Contri_Shipment_flat <- table.cleaning.IRDs(IRDs_Contri_Shipment)#,"Contribution Shipment")
-IRDs_Contri_Shipment_flat$Submeasure <- "Contribution IRDs"
-IRDs_Contri_Shipment_flat$Measure <- "Contribution vs Distribution IRD Shipments"
+IRDs_Contri_Shipment_flat$`Sub-Product` <- "Contribution IRDs"
+IRDs_Contri_Shipment_flat$Product <- "IRD Contribution vs Distribution Shipments"
 IRDs_Contri_Shipment_flat <- df.name.change(IRDs_Contri_Shipment_flat, "value", "Shipments (000s)")
 #~~~IRDs Contribution Shipments End~~~#
 
@@ -101,18 +101,35 @@ IRDs_Contri_Shipment_flat <- df.name.change(IRDs_Contri_Shipment_flat, "value", 
 IRDs_Distri_Shipment <- read.xlsx("M:/Technology/DATA/Media Management/Demand side/Models/Completed/IRDs_2016.xlsx", sheet = "Distribution shipments", colNames = F)
 
 IRDs_Distri_Shipment_flat <- table.cleaning.IRDs(IRDs_Distri_Shipment)#,"Distribution Shipment")
-IRDs_Distri_Shipment_flat$Submeasure <- "Distribution IRDs"
-IRDs_Distri_Shipment_flat$Measure <- "Contribution vs Distribution IRD Shipments"
+IRDs_Distri_Shipment_flat$`Sub-Product` <- "Distribution IRDs"
+IRDs_Distri_Shipment_flat$Product <- "IRD Contribution vs Distribution Shipments"
 IRDs_Distri_Shipment_flat <- df.name.change(IRDs_Distri_Shipment_flat, "value", "Shipments (000s)")
 #~~~IRDs Distribution Shipments End~~~#
 
 
 
-big_table <- bind_rows(list(IRDs_Spend_flat, IRDs_Shipment_flat, IRDs_Contri_Shipment_flat, IRDs_Distri_Shipment_flat))
 
-# fwrite(big_table, "M:/Technology/DATA/Media Management/Demand side/Models/Completed/Output/IRDs.csv", row.names = F)
+#~~~Multiplexer Revenues Start~~~#
+Multiplexer_rev <- read.xlsx("M:/Technology/DATA/Media Management/Demand side/Models/Completed/Multiplexer_2016.xlsx", sheet = "Multiplexer revs", colNames = F)
+Multiplexer_rev_flat <- table.cleaning.IRDs(Multiplexer_rev)#,"Distribution Shipment")
+Multiplexer_rev_flat$`Sub-Product` <- gsub(" multiplexers US$m", "", Multiplexer_rev_flat$`Sub-Product`, fixed = T)
+Multiplexer_rev_flat$Product <- "Multiplexer Revenues by Compression Type"
+Multiplexer_rev_flat <- df.name.change(Multiplexer_rev_flat, "value", "Revenues (USD $m)")
+#~~~Multiplexer Revenues End~~~#
 
-save.xlsx("M:/Technology/DATA/Media Management/Demand side/Models/Completed/Output/IRDs.xlsx", big_table)
+
+
+shipment_table <- bind_rows(list( IRDs_Shipment_flat, IRDs_Contri_Shipment_flat, IRDs_Distri_Shipment_flat))
+names.length <- fn.piper(length,names)
+shipment_table <- shipment_table[,c(1:(names.length(shipment_table)-2),(names.length(shipment_table)),(names.length(shipment_table)-1))]
+shipment_table[,length(shipment_table)] <- round(shipment_table[,length(shipment_table)], 3)
+
+
+
+revenue_table <- bind_rows(list( IRDs_Spend_flat, Multiplexer_rev_flat))
+revenue_table[,length(revenue_table)-1] <- round(revenue_table[,length(revenue_table)-1], 3)
+
+save.xlsx("M:/Technology/DATA/Media Management/Demand side/Models/Completed/Output/R_outputs.xlsx", shipment_table,revenue_table)
 
 
 
