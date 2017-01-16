@@ -1,4 +1,4 @@
-if(is.na(match(c("devtools"),installed.packages()[,"Package"]))) install.packages(new.packages) else library(devtools)
+if(is.na(match(c("devtools"),installed.packages()[,"Package"]))) install.packages("devtools") else library(devtools)
 suppressMessages(devtools::install_github("marcuskhl/BasicSettings"));library(BasicSettings)
 
 #~~~Notes~~~#
@@ -11,7 +11,7 @@ suppressMessages(devtools::install_github("marcuskhl/BasicSettings"));library(Ba
 table.cleaning.IRDs <- function(df){ # added .IRDs because other models might look slightly different
   df <- df[-2,]
   colnames(df)[1:7] <- df[1,1:7]
-  
+
   names.length <- fn.piper(length,names)
   # right fill the colnames
   for (i in 8:names.length(df)){
@@ -19,12 +19,19 @@ table.cleaning.IRDs <- function(df){ # added .IRDs because other models might lo
       df[1,i] <- df[1,i-1]
     }
   }
+
+  #~~~Custom Manipulations Start~~~#
+  if(Reduce("|", grepl("Hours", df[2,]))){
+    df <- df[,-grep("Hours", df[2,], ignore.case = T)] # this column exists in some transcoder sheets
+  }
+
+  #~~~Custom Manipulations Start~~~#
   colnames(df)[8:length(df)] <- paste(df[1,8:length(df)], "xax", df[2,8:length(df)], sep = "")
   df <- cbind.data.frame(df[,1:7],df[,8:names.length(df)][,!is.na(df[2,8:names.length(df)])])
-  
+
   df <- df[-1:-2,]
   df <- df[complete.cases(df[,1:7]),] # remove sub-region separation
-  
+
   df <- df %>% gather(BLAH, value, 8:names.length(df))
   df$Metric <- lapply(strsplit(df$BLAH, "xax"), "[", 1)
   df$Year <- lapply(strsplit(df$BLAH, "xax"), "[", 2)
@@ -61,24 +68,28 @@ TRAX_country_aggregation <- function(df){
 
 
 
-# IRDs_wb <- loadWorkbook("M:/Technology/DATA/Media Management/Demand side/Models/Completed/IRDs_2016_v2.xlsx") # yielded weird error, could not do it the quick way
+#~~~WB Read Start~~~#
+IRDs_wb <- loadWorkbook("M:/Technology/DATA/Media Management/Demand side/Models/Completed/IRDs_2016.xlsx")
+Multiplexer_wb <- loadWorkbook("M:/Technology/DATA/Media Management/Demand side/Models/Completed/Multiplexer_2016.xlsx")
+Transcoder_wb <- loadWorkbook("M:/Technology/DATA/Media Management/Demand side/Models/Completed/Transcoding_2016.xlsx")
+#~~~WB Read End~~~#
 
 
 
 #~~~IRDs Spend Start~~~#
-IRDs_Spend <- read.xlsx("M:/Technology/DATA/Media Management/Demand side/Models/Completed/IRDs_2016.xlsx", sheet = "Value", colNames = F)
+IRDs_Spend <- read.xlsx(IRDs_wb, sheet = "Value", colNames = F)
 
 IRDs_Spend_flat <- table.cleaning.IRDs(IRDs_Spend)#,"IRDs Spend")
 IRDs_Spend_flat$Product <- "IRDs Spend"
 IRDs_Spend_flat <- df.name.change(IRDs_Spend_flat, "value", "Revenues (USD $m)")
-IRDs_Spend_flat$`Sub-Product` <- gsub(" (US$m)", "", IRDs_Spend_flat$`Sub-Product`, fixed = T) 
+IRDs_Spend_flat$`Sub-Product` <- gsub(" (US$m)", "", IRDs_Spend_flat$`Sub-Product`, fixed = T)
 IRDs_Spend_flat$Market <- "IRDs"
 #~~~IRDs Spend End~~~#
 
 
 
 #~~~IRDs Shipments Start~~~#
-IRDs_Shipment <- read.xlsx("M:/Technology/DATA/Media Management/Demand side/Models/Completed/IRDs_2016.xlsx", sheet = "Streams Shipments", colNames = F)
+IRDs_Shipment <- read.xlsx(IRDs_wb, sheet = "Streams Shipments", colNames = F)
 
 IRDs_Shipment_flat <- table.cleaning.IRDs(IRDs_Shipment)#,"IRDs Shipment")
 IRDs_Shipment_flat$Product <- "IRD Inhouse vs Outsource Shipments"
@@ -89,7 +100,7 @@ IRDs_Shipment_flat$Market <- "IRDs"
 
 
 #~~~IRDs Contribution Shipments Start~~~#
-IRDs_Contri_Shipment <- read.xlsx("M:/Technology/DATA/Media Management/Demand side/Models/Completed/IRDs_2016.xlsx", sheet = "Contribution shipments", colNames = F)
+IRDs_Contri_Shipment <- read.xlsx(IRDs_wb, sheet = "Contribution shipments", colNames = F)
 
 IRDs_Contri_Shipment_flat <- table.cleaning.IRDs(IRDs_Contri_Shipment)#,"Contribution Shipment")
 IRDs_Contri_Shipment_flat$`Sub-Product` <- "Contribution IRDs"
@@ -101,7 +112,7 @@ IRDs_Contri_Shipment_flat$Market <- "IRDs"
 
 
 #~~~IRDs Distribution Shipments Start~~~#
-IRDs_Distri_Shipment <- read.xlsx("M:/Technology/DATA/Media Management/Demand side/Models/Completed/IRDs_2016.xlsx", sheet = "Distribution shipments", colNames = F)
+IRDs_Distri_Shipment <- read.xlsx(IRDs_wb, sheet = "Distribution shipments", colNames = F)
 
 IRDs_Distri_Shipment_flat <- table.cleaning.IRDs(IRDs_Distri_Shipment)#,"Distribution Shipment")
 IRDs_Distri_Shipment_flat$`Sub-Product` <- "Distribution IRDs"
@@ -114,7 +125,8 @@ IRDs_Distri_Shipment_flat$Market <- "IRDs"
 
 
 #~~~Multiplexer Revenues Start~~~#
-Multiplexer_rev <- read.xlsx("M:/Technology/DATA/Media Management/Demand side/Models/Completed/Multiplexer_2016.xlsx", sheet = "Multiplexer revs", colNames = F)
+Multiplexer_rev <- read.xlsx(Multiplexer_wb, sheet = "Multiplexer revs", colNames = F)
+
 Multiplexer_rev_flat <- table.cleaning.IRDs(Multiplexer_rev)#,"Distribution Shipment")
 Multiplexer_rev_flat$`Sub-Product` <- gsub(" multiplexers US$m", "", Multiplexer_rev_flat$`Sub-Product`, fixed = T)
 Multiplexer_rev_flat$Product <- "Multiplexer Revenues by Compression Type"
@@ -125,7 +137,8 @@ Multiplexer_rev_flat$Market <- "Multiplexers"
 
 
 #~~~Transcoding Live Inhouse Revenues Start~~~#
-Transcoding_Live_Inhouse_rev <- read.xlsx("M:/Technology/DATA/Media Management/Demand side/Models/Completed/Transcoding_2016.xlsx", sheet = "Live inhouse", colNames = F)
+Transcoding_Live_Inhouse_rev <- read.xlsx(Transcoder_wb, sheet = "Live inhouse revs", colNames = F)
+
 Transcoding_Live_Inhouse_rev_flat <- table.cleaning.IRDs(Transcoding_Live_Inhouse_rev)#,"Distribution Shipment")
 Transcoding_Live_Inhouse_rev_flat$`Sub-Product` <- gsub(" US$m", "", Transcoding_Live_Inhouse_rev_flat$`Sub-Product`, fixed = T)
 Transcoding_Live_Inhouse_rev_flat$Product <- "Transcoder Revenues by Resolution Format"
@@ -136,7 +149,8 @@ Transcoding_Live_Inhouse_rev_flat$Market <- "Transcoders"
 
 
 #~~~Transcoding Non-Live Inhouse Revenues Start~~~#
-Transcoding_NonLive_Inhouse_rev <- read.xlsx("M:/Technology/DATA/Media Management/Demand side/Models/Completed/Transcoding_2016.xlsx", sheet = "Non-Live inhouse", colNames = F)
+Transcoding_NonLive_Inhouse_rev <- read.xlsx(Transcoder_wb, sheet = "Non-Live inhouse revs", colNames = F)
+
 Transcoding_NonLive_Inhouse_rev_flat <- table.cleaning.IRDs(Transcoding_NonLive_Inhouse_rev)#,"Distribution Shipment")
 Transcoding_NonLive_Inhouse_rev_flat$`Sub-Product` <- gsub(" US$m", "", Transcoding_NonLive_Inhouse_rev_flat$`Sub-Product`, fixed = T)
 Transcoding_NonLive_Inhouse_rev_flat$Product <- "Transcoder Revenues by Resolution Format"
@@ -147,7 +161,8 @@ Transcoding_NonLive_Inhouse_rev_flat$Market <- "Transcoders"
 
 
 #~~~Transcoding Live Outsourced Revenues Start~~~#
-Transcoding_Live_Outsource_rev <- read.xlsx("M:/Technology/DATA/Media Management/Demand side/Models/Completed/Transcoding_2016.xlsx", sheet = "Live outsource", colNames = F)
+Transcoding_Live_Outsource_rev <- read.xlsx(Transcoder_wb, sheet = "Live outsource revs", colNames = F)
+
 Transcoding_Live_Outsource_rev_flat <- table.cleaning.IRDs(Transcoding_Live_Outsource_rev)#,"Distribution Shipment")
 Transcoding_Live_Outsource_rev_flat$`Sub-Product` <- gsub(" US$m", "", Transcoding_Live_Outsource_rev_flat$`Sub-Product`, fixed = T)
 Transcoding_Live_Outsource_rev_flat$Product <- "Transcoder Revenues by Resolution Format"
@@ -158,36 +173,121 @@ Transcoding_Live_Outsource_rev_flat$Market <- "Transcoders"
 
 
 #~~~Transcoding Non-Live Outsourced Revenues Start~~~#
-Transcoding_NonLive_Outsource_rev <- read.xlsx("M:/Technology/DATA/Media Management/Demand side/Models/Completed/Transcoding_2016.xlsx", sheet = "Non-Live outsource", colNames = F)
+Transcoding_NonLive_Outsource_rev <- read.xlsx(Transcoder_wb, sheet = "Non-Live outsource revs", colNames = F)
+
 Transcoding_NonLive_Outsource_rev_flat <- table.cleaning.IRDs(Transcoding_NonLive_Outsource_rev)#,"Distribution Shipment")
 Transcoding_NonLive_Outsource_rev_flat$`Sub-Product` <- gsub(" US$m", "", Transcoding_NonLive_Outsource_rev_flat$`Sub-Product`, fixed = T)
 Transcoding_NonLive_Outsource_rev_flat$Product <- "Transcoder Revenues by Resolution Format"
-Transcoding_NonLive_Outsource_rev_flat <- df.name.change(Multiplexer_rev_flat, "value", "Revenues (USD $m)")
+Transcoding_NonLive_Outsource_rev_flat <- df.name.change(Transcoding_NonLive_Outsource_rev_flat, "value", "Revenues (USD $m)")
 Transcoding_NonLive_Outsource_rev_flat$Market <- "Transcoders"
 #~~~Transcoding Non-Live Outsourced Revenues End~~~#
 
 
+
+#~~~Transcoding Broadcast Revenues Composition Start~~~#
+Transcoding_Broadcast_rev_comp <- read.xlsx(Transcoder_wb, sheet = "Broadcast revs comp", colNames = F, rows = 1:238)
+
+Transcoding_Broadcast_rev_comp_flat <- table.cleaning.IRDs(Transcoding_Broadcast_rev_comp)#,"Distribution Shipment")
+Transcoding_Broadcast_rev_comp_flat$`Sub-Product` <- gsub(" US$m", "", Transcoding_Broadcast_rev_comp_flat$`Sub-Product`, fixed = T)
+Transcoding_Broadcast_rev_comp_flat$Product <- "Transcoder Revenues by Buyer Type Resolution Format"
+Transcoding_Broadcast_rev_comp_flat <- df.name.change(Transcoding_Broadcast_rev_comp_flat, "value", "Revenues (USD $m)")
+Transcoding_Broadcast_rev_comp_flat$Market <- "Transcoders"
+#~~~Transcoding Broadcast Revenues Composition End~~~#
+
+
+
+#~~~Transcoding Broadcast Revenues Composition Start~~~#
+Transcoding_Broadcast_rev <- read.xlsx(Transcoder_wb, sheet = "Broadcast revs", colNames = F, rows = 1:238)
+
+Transcoding_Broadcast_rev_flat <- table.cleaning.IRDs(Transcoding_Broadcast_rev)#,"Distribution Shipment")
+Transcoding_Broadcast_rev_flat$`Sub-Product` <- gsub(" US$m", "", Transcoding_Broadcast_rev_flat$`Sub-Product`, fixed = T)
+Transcoding_Broadcast_rev_flat$Product <- "Transcoder Revenues by Buyer Type Inhouse vs Outsourced"
+Transcoding_Broadcast_rev_flat <- df.name.change(Transcoding_Broadcast_rev_flat, "value", "Revenues (USD $m)")
+Transcoding_Broadcast_rev_flat$Market <- "Transcoders"
+#~~~Transcoding Broadcast Revenues Composition End~~~#
+
+
+
+#~~~Transcoding Operators Revenues Composition Start~~~#
+Transcoding_Operators_rev_comp <- read.xlsx(Transcoder_wb, sheet = "Operators revs comp", colNames = F, rows = 1:238)
+
+Transcoding_Operators_rev_comp_flat <- table.cleaning.IRDs(Transcoding_Operators_rev_comp)#,"Distribution Shipment")
+Transcoding_Operators_rev_comp_flat$`Sub-Product` <- gsub(" US$m", "", Transcoding_Operators_rev_comp_flat$`Sub-Product`, fixed = T)
+Transcoding_Operators_rev_comp_flat$Product <- "Transcoder Revenues by Buyer Type Resolution Format"
+Transcoding_Operators_rev_comp_flat <- df.name.change(Transcoding_Operators_rev_comp_flat, "value", "Revenues (USD $m)")
+Transcoding_Operators_rev_comp_flat$Market <- "Transcoders"
+#~~~Transcoding Operators Revenues Composition End~~~#
+
+
+
+#~~~Transcoding Operators Revenues Start~~~#
+Transcoding_Operators_rev <- read.xlsx(Transcoder_wb, sheet = "Operators revs", colNames = F, rows = 1:238)
+
+Transcoding_Operators_rev_flat <- table.cleaning.IRDs(Transcoding_Operators_rev)#,"Distribution Shipment")
+Transcoding_Operators_rev_flat$`Sub-Product` <- gsub(" US$m", "", Transcoding_Operators_rev_flat$`Sub-Product`, fixed = T)
+Transcoding_Operators_rev_flat$Product <- "Transcoder Revenues by Buyer Type Inhouse vs Outsourced"
+Transcoding_Operators_rev_flat <- df.name.change(Transcoding_Operators_rev_flat, "value", "Revenues (USD $m)")
+Transcoding_Operators_rev_flat$Market <- "Transcoders"
+#~~~Transcoding Operators Revenues End~~~#
+
+
+
+#~~~Transcoding Operators Revenues Start~~~#
+Transcoding_OTT_rev_comp <- read.xlsx(Transcoder_wb, sheet = "OTT revs comp", colNames = F, rows = 1:238)
+
+Transcoding_OTT_rev_comp_flat <- table.cleaning.IRDs(Transcoding_OTT_rev_comp)#,"Distribution Shipment")
+Transcoding_OTT_rev_comp_flat$`Sub-Product` <- gsub(" US$m", "", Transcoding_OTT_rev_comp_flat$`Sub-Product`, fixed = T)
+Transcoding_OTT_rev_comp_flat$Product <- "Transcoder Revenues by Buyer Type Resolution Format"
+Transcoding_OTT_rev_comp_flat <- df.name.change(Transcoding_OTT_rev_comp_flat, "value", "Revenues (USD $m)")
+Transcoding_OTT_rev_comp_flat$Market <- "Transcoders"
+#~~~Transcoding Operators Revenues End~~~#
+
+
+
+#~~~Transcoding Operators Revenues Start~~~#
+Transcoding_OTT_rev <- read.xlsx(Transcoder_wb, sheet = "OTT revs", colNames = F, rows = 1:238)
+
+Transcoding_OTT_rev_flat <- table.cleaning.IRDs(Transcoding_OTT_rev)#,"Distribution Shipment")
+Transcoding_OTT_rev_flat$`Sub-Product` <- gsub(" US$m", "", Transcoding_OTT_rev_flat$`Sub-Product`, fixed = T)
+Transcoding_OTT_rev_flat$Product <- "Transcoder Revenues by Buyer Type Inhouse vs Outsourced"
+Transcoding_OTT_rev_flat <- df.name.change(Transcoding_OTT_rev_flat, "value", "Revenues (USD $m)")
+Transcoding_OTT_rev_flat$Market <- "Transcoders"
+#~~~Transcoding Operators Revenues End~~~#
+
+
+
 #~~~Shipment and Revenue Big_Table Building Start~~~#
-shipment_table <- bind_rows(list( IRDs_Shipment_flat, IRDs_Contri_Shipment_flat, IRDs_Distri_Shipment_flat))
 names.length <- fn.piper(length,names)
+
+shipment_table <- bind_rows(list( IRDs_Shipment_flat, IRDs_Contri_Shipment_flat, IRDs_Distri_Shipment_flat))
+
 shipment_table <- shipment_table[,c(1:(names.length(shipment_table)-2),(names.length(shipment_table)),(names.length(shipment_table)-1))]
-shipment_table[,length(shipment_table)] <- round(shipment_table[,length(shipment_table)], 3)
+shipment_table[,(length(shipment_table)-2)] <- round(shipment_table[,(length(shipment_table)-2)], 3)
 
 
 
-revenue_table <- bind_rows(list( IRDs_Spend_flat, Multiplexer_rev_flat, 
-                                 Transcoding_Live_Inhouse_rev_flat, Transcoding_NonLive_Inhouse_rev_flat, 
-                                 Transcoding_Live_Outsource_rev_flat, Transcoding_NonLive_Outsource_rev_flat))
-revenue_table[,length(revenue_table)-1] <- round(revenue_table[,length(revenue_table)-1], 3)
+revenue_table <- bind_rows(list( 
+  # IRDS:
+  IRDs_Spend_flat, 
+  # Multiplexers:
+  Multiplexer_rev_flat,
+  # Transcoders:
+  
+                                 Transcoding_Live_Inhouse_rev_flat, Transcoding_NonLive_Inhouse_rev_flat,
+                                 Transcoding_Live_Outsource_rev_flat, Transcoding_NonLive_Outsource_rev_flat,
+                                 Transcoding_Broadcast_rev_comp_flat, Transcoding_Broadcast_rev_flat,
+                                 Transcoding_Operators_rev_comp_flat, Transcoding_Operators_rev_flat,
+                                 Transcoding_OTT_rev_comp_flat, Transcoding_OTT_rev_flat))
+
+
+revenue_table[,length(revenue_table)-2] <- round(revenue_table[,length(revenue_table)-2], 3)
+
+shipment_table <- shipment_table[shipment_table$Year>2011,]
+revenue_table <- revenue_table[revenue_table$Year>2011,]
+
 #~~~Shipment and Revenue Big_Table Building End~~~#
 
 
 save.xlsx("M:/Technology/DATA/Media Management/Demand side/Models/Completed/Output/R_outputs.xlsx", shipment_table,revenue_table)
-
-
-
-
-
-
 
 
