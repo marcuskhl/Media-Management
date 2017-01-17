@@ -63,7 +63,7 @@ table.cleaning.IRDs <- function(df){ # added .IRDs because other models might lo
   }
   
   if(Reduce("|", grepl("inhouse", df[1,], fixed = T))){
-    df[1,] <- gsub("inhouse", "On Premesis", df[1,], fixed = T) # dont need units here 
+    df[1,] <- gsub("inhouse", "On Prem", df[1,], fixed = T) # dont need units here 
   }
   
   if(Reduce("|", grepl("outsource", df[1,], fixed = T))){
@@ -122,8 +122,8 @@ IRDs_Spend_flat$Product <- "Revenues by Compression Format"
 IRDs_Spend_flat <- df.name.change(IRDs_Spend_flat, "value", "Revenues (USD $m)")
 #IRDs_Spend_flat$`Sub-Product` <- gsub(" (US$m)", "", IRDs_Spend_flat$`Sub-Product`, fixed = T)
 IRDs_Spend_flat <- df.name.change(IRDs_Spend_flat, "Sub-Product", "Compression Format")
-IRDs_Spend_flat$`Compression Type` <- gsub(" IRDS", "", IRDs_Spend_flat$`Compression Type`)
-IRDs_Spend_flat$`Compression Type` <- gsub(" IRDs", "", IRDs_Spend_flat$`Compression Type`)
+IRDs_Spend_flat$`Compression Format` <- gsub(" IRDS", "", IRDs_Spend_flat$`Compression Format`)
+IRDs_Spend_flat$`Compression Format` <- gsub(" IRDs", "", IRDs_Spend_flat$`Compression Format`)
 
 IRDs_Spend_flat$Market <- "IRDs"
 #~~~IRDs Spend End~~~#
@@ -194,8 +194,8 @@ Transcoding_Live_Inhouse_rev_flat <- table.cleaning.IRDs(Transcoding_Live_Inhous
 Transcoding_Live_Inhouse_rev_flat$Product <- "Revenues by Operation Type Resolution Format"
 Transcoding_Live_Inhouse_rev_flat <- df.name.change(Transcoding_Live_Inhouse_rev_flat, "value", "Revenues (USD $m)")
 Transcoding_Live_Inhouse_rev_flat <- df.name.change(Transcoding_Live_Inhouse_rev_flat, "Sub-Product", "Operation Type, Resolution Format")
-Transcoding_Live_Inhouse_rev_flat$`Operation Type` <- "On Premesis"
-Transcoding_Live_Inhouse_rev_flat$`Operation Type, Resolution Format` <- gsub("On Premesis ", "",Transcoding_Live_Inhouse_rev_flat$`Operation Type, Resolution Format`)
+Transcoding_Live_Inhouse_rev_flat$`Operation Type` <- "On Prem"
+Transcoding_Live_Inhouse_rev_flat$`Operation Type, Resolution Format` <- gsub("On Prem ", "",Transcoding_Live_Inhouse_rev_flat$`Operation Type, Resolution Format`)
 Transcoding_Live_Inhouse_rev_flat$`Live vs Non-Live` <- "Live"
 Transcoding_Live_Inhouse_rev_flat$`Operation Type, Resolution Format` <- gsub("Live ", "",Transcoding_Live_Inhouse_rev_flat$`Operation Type, Resolution Format`)
 Transcoding_Live_Inhouse_rev_flat <- df.name.change(Transcoding_Live_Inhouse_rev_flat,"Operation Type, Resolution Format", "Resolution Format" )
@@ -212,8 +212,8 @@ Transcoding_NonLive_Inhouse_rev_flat <- table.cleaning.IRDs(Transcoding_NonLive_
 Transcoding_NonLive_Inhouse_rev_flat$Product <- "Revenues by Operation Type Resolution Format"
 Transcoding_NonLive_Inhouse_rev_flat <- df.name.change(Transcoding_NonLive_Inhouse_rev_flat, "value", "Revenues (USD $m)")
 Transcoding_NonLive_Inhouse_rev_flat <- df.name.change(Transcoding_NonLive_Inhouse_rev_flat, "Sub-Product", "Operation Type, Resolution Format")
-Transcoding_NonLive_Inhouse_rev_flat$`Operation Type` <- "On Premesis"
-Transcoding_NonLive_Inhouse_rev_flat$`Operation Type, Resolution Format` <- gsub("On Premesis ", "",Transcoding_NonLive_Inhouse_rev_flat$`Operation Type, Resolution Format`)
+Transcoding_NonLive_Inhouse_rev_flat$`Operation Type` <- "On Prem"
+Transcoding_NonLive_Inhouse_rev_flat$`Operation Type, Resolution Format` <- gsub("On Prem ", "",Transcoding_NonLive_Inhouse_rev_flat$`Operation Type, Resolution Format`)
 Transcoding_NonLive_Inhouse_rev_flat$`Live vs Non-Live` <- "Non-Live"
 Transcoding_NonLive_Inhouse_rev_flat$`Operation Type, Resolution Format` <- gsub("Non-Live ", "",Transcoding_NonLive_Inhouse_rev_flat$`Operation Type, Resolution Format`)
 Transcoding_NonLive_Inhouse_rev_flat <- df.name.change(Transcoding_NonLive_Inhouse_rev_flat,"Operation Type, Resolution Format", "Resolution Format" )
